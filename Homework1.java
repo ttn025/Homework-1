@@ -400,17 +400,21 @@ public class Homework1
 	    int Middle;
 	    String MiddleId;
 	    String record = "NOT_FOUND";
+	    String tempRecord = "NOT_FOUND";
 	    boolean Found = false;
 
         while (!Found && (High >= Low)) 
         {
             Middle = (Low + High) / 2;
-            record = getRecord(Din, Middle);
-            MiddleId = record.substring(0,5);
+            tempRecord = getRecord(Din, Middle);
+            MiddleId = tempRecord.substring(0,5);
      
             int result = MiddleId.compareTo(id);
             if (result == 0)   // ids match
-                Found = true;
+            {
+            	record = tempRecord;
+            	Found = true;
+            }                
             else if (result < 0)
                 Low = Middle + 1;
             else
@@ -475,8 +479,9 @@ public class Homework1
 	    			boolean inSorted = false;
 	    			System.out.print("ID: ");
 	    			String id = new String();
-	    			while (!validId && !freeId)
+	    			while (!validId || !freeId)
 	    			{
+	    				validId = false;
 	    				id = br.readLine();
 	    				if (id.matches("[0-9]+") && id.length() <= 5)
             			{
@@ -499,6 +504,10 @@ public class Homework1
             				{
             					freeId = true;
             					inSorted = true;
+            				}
+            				else 
+            				{
+            					System.out.println("Invalid value for ID. Please enter a valid value: ");
             				}
             			}
             			else
