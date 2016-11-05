@@ -1,623 +1,645 @@
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.io.RandomAccessFile;
-import java.io.UnsupportedEncodingException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
 
-public class Homework1 
+public class Homework4 
 {
-    static int RECORD_SIZE = 72;
-    static int NUM_RECORDS = 0;
-    static int NUM_OVERFLOW = 0;
-    //static String FILENAME = "input.txt";
-    static String FILENAME = "";
-    static boolean FILEISOPEN = false;
-    static RandomAccessFile DIN;
-    static RandomAccessFile DIN_OVERFLOW;
-    static RandomAccessFile DIN_CONFIG;
+	private static Connection connection;
+    private static Statement statement;
+    private static String tempQuery;
     
-    public static void PrintMenu()
+    private static String allIntsRegex = "[0-9]+";
+
+    // The constructor for the class
+    public Homework4()
+    {
+        connection = null;
+        statement = null;
+    }
+    
+    // Connect to the database
+    public void connect(String Username, String mysqlPassword) throws SQLException 
+    {
+        try 
+        {
+            connection = DriverManager.getConnection("jdbc:mysql://localhost/" + Username + "?" +
+                    "user=" + Username + "&password=" + mysqlPassword);
+            //connection = DriverManager.getConnection("jdbc:mysql://localhost/" + Username +
+             //       "?user=" + Username + "&password=" + mysqlPassword);
+        }
+        catch (Exception e) 
+        {
+            throw e;
+        }
+    }
+    
+    // Remove all records and fill them with values for testing
+    // Assumes that the tables are already created
+    public void initDatabase(String Username, String Password, String SchemaName) throws SQLException 
+    {
+        statement = connection.createStatement();
+        statement.executeUpdate("DELETE from Booking");
+        statement.executeUpdate("DELETE from Room");
+        statement.executeUpdate("DELETE from Hotel");
+        statement.executeUpdate("DELETE from Guest");
+
+        insert("Guest", "1, 'Cam Newton', '800 S Mint St., Charlotte, NC'");
+        insert("Guest", "4, 'Dark Prescott', '1 ATT Way, Arlington, TX'");
+        insert("Guest", "11, 'Alex Smith', '1 Arrowhead Dr., Kansas City, MO'");
+        insert("Guest", "0, 'Johnny Manziel', 'Texas A&M'");
+
+        insert("Hotel", "0, 'Fleabag', 'Detroit'");
+        insert("Hotel", "8, 'Lap of Luxury', 'Las Vegas'");
+        insert("Hotel", "3, 'Razorback Heave', 'Fayetteville'");
+
+        insert("Room", "13, 0, 'tp', 75");
+        insert("Room", "222, 0, 'db', 60");
+        insert("Room", "107, 0, 'sg', 50");
+        insert("Room", "107, 3, 'sg', 80");
+        insert("Room", "109, 3, 'db', 100");
+        insert("Room", "207, 3, 'tp', 125");
+        insert("Room", "307, 3, 'db', 110");
+        insert("Room", "101, 8, 'db', 400");
+        insert("Room", "107, 8, 'tp', 600");
+        insert("Room", "201, 8, 'db', 400");
+        insert("Room", "301, 8, 'db', 400");
+
+        insert("Booking", "0, 101, 8, 1, STR_TO_DATE('2017-06-20', '%Y-%m-%d'), STR_TO_DATE('2017-06-24', '%Y-%m-%d')");
+        insert("Booking", "1, 101, 8, 1, STR_TO_DATE('2017-07-01', '%Y-%m-%d'), STR_TO_DATE('2017-07-03', '%Y-%m-%d')");
+        insert("Booking", "2, 201, 8, 1, STR_TO_DATE('2017-07-01', '%Y-%m-%d'), STR_TO_DATE('2017-07-03', '%Y-%m-%d')");
+        insert("Booking", "3, 301, 8, 11, STR_TO_DATE('2017-07-01', '%Y-%m-%d'), STR_TO_DATE('2017-07-03', '%Y-%m-%d')");
+        insert("Booking", "4, 107, 3, 4, STR_TO_DATE('2017-07-01', '%Y-%m-%d'), STR_TO_DATE('2017-07-03', '%Y-%m-%d')");
+        insert("Booking", "5, 107, 0, 0, STR_TO_DATE('2017-07-01', '%Y-%m-%d'), STR_TO_DATE('2017-07-03', '%Y-%m-%d')");
+        insert("Booking", "6, 101, 8, 4, STR_TO_DATE('2017-09-28', '%Y-%m-%d'), STR_TO_DATE('2017-10-03', '%Y-%m-%d')");
+    }
+    
+    // Insert into any table, any values from data passed in as String parameters
+    public static void insert(String table, String values) 
+    {
+        String query = "INSERT into " + table + " values (" + values + ")" ;
+        try 
+        {
+            statement.executeUpdate(query);
+        } 
+        catch (SQLException e) 
+        {
+            e.printStackTrace();
+        }
+    }
+    
+    // Disconnect from the database
+    public static void disConnect() throws SQLException 
+    {
+        connection.close();
+        statement.close();
+    }
+
+    // Execute an SQL query passed in as a String parameter
+    // and print the resulting relation
+    public void query(String q) 
+    {
+        try 
+        {
+            ResultSet resultSet = statement.executeQuery(q);
+            System.out.println("\n---------------------------------");
+            System.out.println("Query: \n" + q + "\n\nResult: ");
+            print(resultSet);
+        }
+        catch (SQLException e) 
+        {
+            e.printStackTrace();
+        }
+    }
+    
+    public static int GetMaxHotelID()
+    {
+    	try 
+        {
+            ResultSet resultSet = statement.executeQuery("SELECT MAX(hotelID) from Hotel");
+            
+            return resultSet.getInt(1);
+        }
+        catch (SQLException e) 
+        {
+            e.printStackTrace();
+            
+            return -1;
+        }
+    }
+    
+    public static int GetMaxBookingNo()
+    {
+    	try 
+        {
+            ResultSet resultSet = statement.executeQuery("SELECT MAX(bookingNo) from Booking");
+            
+            return resultSet.getInt(1);
+        }
+        catch (SQLException e) 
+        {
+            e.printStackTrace();
+            
+            return -1;
+        }
+    }
+    
+    public static int GetMaxGetNum()
+    {
+    	try 
+        {
+            ResultSet resultSet = statement.executeQuery("SELECT MAX(guestNo) from Guest");
+            
+            return resultSet.getInt(1);
+        }
+        catch (SQLException e) 
+        {
+            e.printStackTrace();
+            
+            return -1;
+        }
+    }
+    
+    public static int CheckNameExists(String name)
+    {
+    	try 
+        {
+            ResultSet resultSet = statement.executeQuery("SELECT COUNT(guestName) FROM Guest where guestName = " + name);
+            //maybe this is wrong
+            return resultSet.getInt(1);
+        }
+        catch (SQLException e) 
+        {
+            e.printStackTrace();
+            
+            return -1;
+        }
+    }
+    
+    public static int CheckGuestNoExists(String num)
+    {
+    	try 
+        {
+            ResultSet resultSet = statement.executeQuery("SELECT COUNT(guestNo) FROM Guest where guestNo = " + num);
+            //maybe this is wrong
+            return resultSet.getInt(1);
+        }
+        catch (SQLException e) 
+        {
+            e.printStackTrace();
+            
+            return -1;
+        }
+    }
+    
+    public static int GetHotelIDFromName(String hotelName)
+    {
+    	try 
+        {
+            ResultSet resultSet = statement.executeQuery("SELECT hotelID FROM Hotel WHERE hotelName = " + hotelName);
+            //maybe this is wrong
+            return resultSet.getInt(1);
+        }
+        catch (SQLException e) 
+        {
+            e.printStackTrace();
+            
+            return -1;
+        }
+    }
+
+    // Print the results of a query with attribute names on the first line
+    // Followed by the tuples, one per line
+    public void print(ResultSet resultSet) throws SQLException 
+    {
+        ResultSetMetaData metaData = resultSet.getMetaData();
+        int numColumns = metaData.getColumnCount();
+
+        printHeader(metaData, numColumns);
+        printRecords(resultSet, numColumns);
+    }
+
+    // Print the attribute names
+    public void printHeader(ResultSetMetaData metaData, int numColumns) throws SQLException 
+    {
+        for (int i = 1; i <= numColumns; i++) 
+        {
+            if (i > 1)
+                System.out.print(",  ");
+            System.out.print(metaData.getColumnName(i));
+        }
+        System.out.println();
+    }
+
+    // Print the attribute values for all tuples in the result
+    public void printRecords(ResultSet resultSet, int numColumns) throws SQLException 
+    {
+        String columnValue;
+        while (resultSet.next()) 
+        {
+            for (int i = 1; i <= numColumns; i++) 
+            {
+                if (i > 1)
+                    System.out.print(",  ");
+                columnValue = resultSet.getString(i);
+                System.out.print(columnValue);
+            }
+            System.out.println("");
+        }
+    }
+	
+	public static void PrintMenu()
     {
     	System.out.println("Please input which operation you would like to perform.");
     	System.out.println("Menu of Operations:");
-    	System.out.println("1) Create New Database");
-    	System.out.println("2) Open Database");
-    	System.out.println("3) Close Database");
-    	System.out.println("4) Display record");
-    	System.out.println("5) Update record");
-    	System.out.println("6) Create report");
-    	System.out.println("7) Add a record");
-    	System.out.println("8) Delete a record");
-    	System.out.println("9) Quit");
+    	System.out.println("1) Find a hotel room");
+    	System.out.println("2) Book a hotel room");
+    	System.out.println("3) Find a booking ");
+    	System.out.println("4) Cancel a booking");
+    	System.out.println("5) List all guests");
+    	System.out.println("6) Add a hotel");
+    	System.out.println("7) Quit");
     }
-    
-    public static void CreateNewDatabase(String filename) throws IOException
-    {
-    	PrintWriter writer = new PrintWriter(filename + ".txt", "UTF-8");
-    	writer = new PrintWriter(filename + "Overflow.txt", "UTF-8");
-    	writer = new PrintWriter(filename + "Config.txt", "UTF-8");
-    	writer.println("0 0");
-    	System.out.println("Created new database '" + filename + "'.\n");
-    	writer.close();
-    }
-    
-    public static void OpenDatabase(String filename) throws IOException
-    {
-		if (FILEISOPEN)
-    	{
-    		System.out.println("Please close the current database before opening another one.");
-    	}
-    	else
-    	{
-    		File f = new File(filename + ".txt");
-    		if (f.isFile())
-    		{
-    			FILENAME = filename;
-    			DIN = new RandomAccessFile(FILENAME + ".txt", "rw");
-    			DIN_OVERFLOW = new RandomAccessFile(FILENAME + "Overflow.txt", "rw");
-    			DIN_CONFIG = new RandomAccessFile(FILENAME + "Config.txt", "rw");
-    			BufferedReader br = new BufferedReader(new FileReader(FILENAME + "Config.txt"));
-    			String[] line = br.readLine().split(" ");
-    			NUM_RECORDS = Integer.parseInt(line[0]);
-    			NUM_OVERFLOW = Integer.parseInt(line[1]);
-    			FILEISOPEN = true;
-    			System.out.println("Database '" + FILENAME + "' is open.\n");
-    		}
-    		else
-    		{
-    			System.out.println("File does not exist.\n");
-    		}        	
-    	}    	
-    }
-    
-    public static void CloseCurrentDatabase() throws IOException
-    {
-    	FILEISOPEN = false;
-    	DIN.close();
-    	DIN_CONFIG.close();
-    	DIN_OVERFLOW.close();
-    	System.out.println("Database '" + FILENAME + "' is closed.\n");
-    }
-    
-    public static void DisplayRecord(String id) throws IOException
-    {
-    	if (FILENAME == "")
-    	{
-    		System.out.println("Please open a database.");
-    	}
-    	else
-    	{
-    		for (; id.length() < 5; )
-    		{
-    			id = "0" + id;
-    		}
-    		String sRecord = binarySearch(DIN, id);
-    		String lRecord = linearSearch(DIN_OVERFLOW, id);
-    		if (sRecord.charAt(6) == ' ')
-    		{
-    			System.out.println("NOT_FOUND");
-    		}
-    		else if (!sRecord.equals("NOT_FOUND"))
-    		{
-    			System.out.println(sRecord + "\n");
-    		}
-    		else if (!lRecord.equals("NOT_FOUND"))
-    		{
-    			System.out.println(lRecord + "\n");
-    		}
-    		/*else
-    		{
-    			System.out.println("NOT_FOUND");
-    		}*/    		
-    	}
-    }
-    
-    public static void UpdateRecord(String id) throws IOException
-    {
-    	if (FILENAME == "")
-    	{
-    		System.out.println("Please open a database.");
-    	}
-    	else
-    	{   
-    		for (; id.length() < 5; )
-    		{
-    			id = "0" + id;
-    		}
-    		int Low = 0;
-    	    int High = NUM_RECORDS;
-    	    int Middle;
-    	    String MiddleId;
-    	    String record = "NOT_FOUND";
-    	    boolean Found = false;
+	
+	public static void main(String[] args) throws IOException, SQLException
+	{
+		String month;
+		String day;
+		String year;
+		String checkInDate;
+		String guestNo;
+		boolean guestNoExists;
+		
+		//TODO: Change username and password
+		String username = "MYUSERNAME";
+        String mysqlPassword = "MYMYSQLPASSWORD";
 
-            while (!Found && (High >= Low)) 
-            {
-                Middle = (Low + High) / 2;
-                record = getRecord(DIN, Middle);
-                MiddleId = record.substring(0,5);
-         
-                int result = MiddleId.compareTo(id);
-                if (result == 0)   // ids match
-                {
-                	Found = true;
-                	DIN.seek(0); // return to the top of the file
-                    DIN.skipBytes(Middle * RECORD_SIZE);
-                    System.out.println(record + "\n");
-                    String recordId = record.substring(0, 6);
-                    String experience = record.substring(6, 17);
-                    String married = record.substring(17, 25);
-                    String wage = record.substring(25, 38);
-                    String industry = record.substring(38, 66);
-                    PrintUpdateMenu();
-                    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-                	String input;
-                	while(!(input = br.readLine()).equals("0"))
-                	{
-                		String temp;
-                		switch (input)
-                		{
-	                		case "1":
-	                			System.out.print("Please enter a new value for experience: ");
-	                			temp = br.readLine();	                			
-	                			if (temp.matches("[0-9]+") && temp.length() <= 10)
-	                			{
-	                				experience = temp;
-	                				if (experience.length() < 10)
-	                				{
-	                					for ( ; experience.length() <10 ; )
-	                					{
-	                						experience += " ";
-	                					}
-	                				}
-	                			}
-	                			else
-	                			{
-	                				System.out.println("Invalid value for experience.");
-	                			}
-	                			break;
-	                		case "2":
-	                			System.out.print("Please enter 'y' for yes or 'n' for no: ");
-	                			temp = br.readLine();	                			
-	                			if (temp.equals("y"))
-	                			{
-	                				married = "yes    ";
-	                			}
-	                			else if (temp.equals("n"))
-	                			{
-	                				married = "no     ";
-	                			}
-	                			else
-	                			{
-	                				System.out.println("Invalid value for married.");
-	                			}
-	                			break;
-	                		case "3":
-	                			System.out.print("Please enter a new value for wage: ");
-	                			temp = br.readLine();	                			
-	                			if (temp.matches("^[0-9]*\\.?[0-9]*$") && temp.length() <= 12)
-	                			{
-	                				wage = temp;
-	                				if (wage.length() < 12)
-	                				{
-	                					for ( ; wage.length() <12 ; )
-	                					{
-	                						wage += " ";
-	                					}
-	                				}
-	                			}
-	                			else
-	                			{
-	                				System.out.println("Invalid value for wage.");
-	                			}
-	                			break;
-	                		case "4":
-	                			System.out.print("Please enter a new value for industry. Please separate each word with an underscore: ");
-	                			temp = br.readLine();	                			
-	                			if (temp.matches("^[a-zA-Z0-9_]*$") && temp.length() <= 27)
-	                			{
-	                				industry = temp;
-	                				if (industry.length() < 27)
-	                				{
-	                					for ( ; industry.length() <27 ; )
-	                					{
-	                						industry += " ";
-	                					}
-	                				}
-	                			}
-	                			else
-	                			{
-	                				System.out.print("Invalid value for industry\n.");
-	                			}
-	                			break;
-                			default:
-                				System.out.println("Please enter a valid input.\n");
-                				break;
-                		}
-                		System.out.println("Updated record: \n" + recordId + experience + married + wage + industry + "\n");
-                		PrintUpdateMenu();
-                	}
-                	DIN.writeBytes(recordId + experience + married + wage + industry);                	
-                }                	
-                else if (result < 0)
-                    Low = Middle + 1;
-                else
-                    High = Middle -1;
-            }            
-    	}
-    }
-    
-    public static void PrintUpdateMenu()
-    {
-    	System.out.println("Please input which field you would like to update.");    	
-    	System.out.println("1) Experience");
-    	System.out.println("2) Married");
-    	System.out.println("3) Wage");
-    	System.out.println("4) Industry");
-    	System.out.println("0) Done");
-    }
-    
-    public static void CreateReport() throws IOException
-    {
-    	BufferedReader br = new BufferedReader(new FileReader(FILENAME + ".txt"));
-    	PrintWriter writer = new PrintWriter(FILENAME + "Report" + ".txt", "UTF-8");
-    	
-    	for (int i = 0; i < 11; i++)
-    	{
-    		writer.println(br.readLine());
-    	}
-    	
-    	System.out.println("Report has been saved to " + FILENAME + "Report.");
-    	br.close();
-    	writer.close();    	
-    }
-    
-    public static void AddRecord(boolean inSorted, String id, String experience, String married, String wage, String industry) throws IOException
-    {
-    	if (inSorted)
-    	{
-    		int Low = 0;
-    	    int High = NUM_RECORDS;
-    	    int Middle;
-    	    String MiddleId;
-    	    String record = "NOT_FOUND";
-    	    boolean Found = false;
-
-            while (!Found && (High >= Low)) 
-            {
-                Middle = (Low + High) / 2;
-                record = getRecord(DIN, Middle);
-                MiddleId = record.substring(0,5);
-         
-                int result = MiddleId.compareTo(id);
-                if (result == 0)   // ids match
-                {
-                	Found = true;
-                	DIN.seek(0); // return to the top of the file
-                    DIN.skipBytes(Middle * RECORD_SIZE);
-                    String tempRecord = id + " " + experience + " " + married + " " + wage + " " + industry;
-                    //Take out -2?
-                    for (; tempRecord.length() < RECORD_SIZE - 2; )
-                    {
-                    	tempRecord += " ";
-                    }
-                    DIN.writeBytes(tempRecord + "\r\n");              	
-                }                	
-                else if (result < 0)
-                    Low = Middle + 1;
-                else
-                    High = Middle -1;
-            }
-            NUM_RECORDS++;
-    	}
-    	else
-    	{    		
-    		DIN_OVERFLOW.seek(0); // return to the top of the file
-            DIN_OVERFLOW.skipBytes(NUM_OVERFLOW * RECORD_SIZE);
-            String tempRecord = id + " " + experience + " " + married + " " + wage + " " + industry;
-            //Take out -2?
-            for (; tempRecord.length() < RECORD_SIZE - 2; )
-            {
-            	tempRecord += " ";
-            }
-            DIN_OVERFLOW.writeBytes(tempRecord + "\r\n");  
-            NUM_OVERFLOW++;
-            
-            
-            //Check if num_overflow == 4
-    	}
-    }
-    
-    public static void DeleteRecord(String id) throws IOException
-    {
-		int Low = 0;
-	    int High = NUM_RECORDS;
-	    int Middle;
-	    String MiddleId;
-	    String record = "NOT_FOUND";
-	    boolean Found = false;
-	    for (; id.length() < 5; )
-		{
-			id = "0" + id;
-		}
-	    
-        while (!Found && (High >= Low)) 
-        {
-            Middle = (Low + High) / 2;
-            record = getRecord(DIN, Middle);
-            MiddleId = record.substring(0,5);
-     
-            int result = MiddleId.compareTo(id);
-            if (result == 0)   // ids match
-            {
-            	Found = true;
-            	DIN.seek(0); // return to the top of the file
-                DIN.skipBytes(Middle * RECORD_SIZE);
-                //String deletedString = "-1";
-                for (int i = 0; i < RECORD_SIZE - 7; i++)
-                {
-                	//deletedString += " ";
-                	id += " ";
-                }
-                //DIN.writeBytes(deletedString); 
-                DIN.writeBytes(id);
-                System.out.println("Record " + id.trim() + "has been deleted.\n");
-            }                    
-            else if (result < 0)
-                Low = Middle + 1;
-            else
-                High = Middle -1;
-        }
-        if (!Found)
-        {
-        	System.out.println("ID does not exist.");
-        }	
-    }
-    
-    /*Get record number n-th (from 1 to 4360) */
-    //public static String getRecord(RandomAccessFile Din, int recordNum) throws IOException 
-    public static String getRecord(RandomAccessFile Din, int recordNum) throws IOException 
-    {
-    	String record = "NOT_FOUND";
-        if ((recordNum >=1) && (recordNum <= NUM_RECORDS))
-        {
-            Din.seek(0); // return to the top fo the file
-            Din.skipBytes(recordNum * RECORD_SIZE);
-            record = Din.readLine();
-        }
-        return record;
-    }
-
-    /*Binary Search record id */
-    public static String binarySearch(RandomAccessFile Din, String id) throws IOException 
-    {
-	    int Low = 0;
-	    int High = NUM_RECORDS;
-	    int Middle;
-	    String MiddleId;
-	    String record = "NOT_FOUND";
-	    String tempRecord = "NOT_FOUND";
-	    boolean Found = false;
-
-        while (!Found && (High >= Low)) 
-        {
-            Middle = (Low + High) / 2;
-            tempRecord = getRecord(Din, Middle);
-            MiddleId = tempRecord.substring(0,5);
-     
-            int result = MiddleId.compareTo(id);
-            if (result == 0)   // ids match
-            {
-            	record = tempRecord;
-            	Found = true;
-            }                
-            else if (result < 0)
-                Low = Middle + 1;
-            else
-                High = Middle -1;
-        }
-        return record;
-    }
-    
-    public static String linearSearch(RandomAccessFile Din, String id) throws IOException 
-    {
-    	String record;
-    	Din.seek(0);
-    	for(int i = 0; i < NUM_OVERFLOW; i++)
-    	{
-    		record = Din.readLine();
-    		if(record.substring(0, 5).equals(id))
-    			return record;
-    	}
-    	return "NOT_FOUND";
-    }
-    
-    public static void main(String[] args) throws IOException 
-    {    	
-    	PrintMenu();
-    	BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        Homework4 obj = new Homework4();
+        obj.connect(username, mysqlPassword);
+        obj.initDatabase(username, mysqlPassword, username);
+		
+		PrintMenu();
+		
+		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
     	String input;
-    	while (!(input = br.readLine()).equals("9"))
+    	while (!(input = br.readLine()).equals("7"))
     	{
-    		int operation = Integer.parseInt(input);
+    		int operation = 0;
+			try
+			{
+				operation = Integer.parseInt(input);
+				if (operation < 1 || operation > 7)
+				{
+					System.out.println("Invalid input.");
+					PrintMenu();
+					input = br.readLine();
+					continue;
+				}
+			}
+			catch (Exception e)
+			{
+				System.out.println("Invalid input.");
+				PrintMenu();
+			}
+    		
     		
     		switch (operation)
     		{
-	    		case 1:
-	    			System.out.print("Please enter a name for the file to be created: ");
-	    			CreateNewDatabase(br.readLine());
-	    			break;
-	    		case 2:
-	    			//Check to see if a file is open
-	    			System.out.print("Please enter the name of the file you would like to open: ");
-	    			OpenDatabase(br.readLine());
-	    			break;
-	    		case 3:
-	    			CloseCurrentDatabase();
-	    			break;
-	    		case 4:
-	    			System.out.print("Please enter the ID of the record you would like to display: ");
-	    			DisplayRecord(br.readLine());
-	    			break;
-	    		case 5:
-	    			System.out.print("Please enter the ID of the record you would like to update: ");
-	    			UpdateRecord(br.readLine());
-	    			break;
-	    		case 6:
-	    			CreateReport();
-	    			break;
-	    		case 7:
-	    			System.out.println("Please enter a value for each of the following fields: ");	    			
+	    		case 1: //find a hotel room
+	    			//Find and list all rooms available for the duration of their stay at all hotels. 
+	    			//List the hotel name, room type, and price for each available room.
 	    			
-	    			//find what id to assign to new record	    			
-	    			boolean validId = false;
-	    			boolean freeId = false;
-	    			boolean inSorted = false;
-	    			System.out.print("ID: ");
-	    			String id = new String();
-	    			while (!validId || !freeId)
+	    			System.out.println("Please enter values for the check in date:");
+	    			System.out.println("Month (mm):");
+	    			month = br.readLine();
+	    			while (!month.matches("[0-9]+") || month.length() != 2)
 	    			{
-	    				validId = false;
-	    				id = br.readLine();
-	    				if (id.matches("[0-9]+") && id.length() <= 5)
-            			{
-            				if (id.length() < 5)
-            				{
-            					for ( ; id.length() < 5 ; )
-            					{
-            						id = "0" + id;
-            					}
-            				}
-            				validId = true;
-            				
-            				String sRecord = binarySearch(DIN, id);
-            				String lRecord = linearSearch(DIN_OVERFLOW, id);
-            				if ((sRecord.equals("NOT_FOUND") && lRecord.equals("NOT_FOUND")))
-            				{
-            					freeId = true;
-            				}
-            				else if (sRecord.charAt(6) == (' '))
-            				{
-            					freeId = true;
-            					inSorted = true;
-            				}
-            				else 
-            				{
-            					System.out.println("Invalid value for ID. Please enter a valid value: ");
-            				}
-            			}
-            			else
-            			{
-            				System.out.println("Invalid value for ID. Please enter a valid value: ");
-            			}
+	    				System.out.println("Invalid input. Please re-enter the month (mm): ");
+	    				month = br.readLine();
 	    			}
 	    			
-	    			boolean validExperience = false;
-	    			System.out.print("Experience: ");
-	    			String experience = new String();
-	    			while (!validExperience)
+	    			System.out.println("Day (dd):");
+	    			day = br.readLine();
+	    			while (!day.matches("[0-9]+") || month.length() != 2)
 	    			{
-	    				experience = br.readLine();
-	    				if (experience.matches("[0-9]+") && experience.length() <= 10)
-            			{
-            				if (experience.length() < 10)
-            				{
-            					for ( ; experience.length() <10 ; )
-            					{
-            						experience += " ";
-            					}
-            				}
-            				validExperience = true;
-            			}
-            			else
-            			{
-            				System.out.println("Invalid value for experience. Please enter a valid value: ");
-            			}
+	    				System.out.println("Invalid input. Please re-enter the day (dd): ");
+	    				day = br.readLine();
 	    			}
 	    			
-	    			boolean validMarried = false;
-	    			String married = new String();
-	    			System.out.print("Married (Please enter 'y' for yes or 'n' for no): ");
-	    			while (!validMarried)
+	    			System.out.println("Year (yyyy):");
+	    			year = br.readLine();
+	    			while (!year.matches("[0-9]+") || month.length() != 4)
 	    			{
-	    				married = br.readLine();	                			
-            			if (married.equals("y"))
-            			{
-            				married = "yes    ";
-            				validMarried = true;
-            			}
-            			else if (married.equals("n"))
-            			{
-            				married = "no     ";
-            				validMarried = true;
-            			}
-            			else
-            			{
-            				System.out.println("Invalid value for married. Please enter a valid value: ");
-            			}
+	    				System.out.println("Invalid input. Please re-enter the year (yyyy): ");
+	    				year = br.readLine();
+	    			}
+	    			
+	    			checkInDate = year + "-" + month + "-" + day;
+	    			
+	    			System.out.println("Please enter the number of nights you would like to stay: ");
+	    			String numNights = br.readLine();
+	    			while (!numNights.matches("[0-9]+"))
+	    			{
+	    				System.out.println("Invalid input. Please re-enter the number of nights you would like to stay: ");
+	    				numNights = br.readLine();
+	    			}
+	    			
+	    			//TODO query to find and list all available rooms (hotelName, roomType, price) for numNights from all hotels
+	    			
+	    			break;
+	    		case 2: //book a hotel room
+	    			System.out.println("Please enter your name: ");
+	    			String bookName = br.readLine();
+	    			int bookHotelName = CheckNameExists(bookName);
+	    			boolean isBookFound;
+	    			if (bookHotelName >= 1)
+	    			{
+	    				isBookFound = true;
+	    			}
+	    			else
+	    			{
+	    				isBookFound = false;
+	    			}
+	    			
+	    			if (isBookFound)
+	    			{
+	    				obj.query("SELECT guestNo, guestAddress FROM Guest WHERE guestName = " + bookName);
+	    			}
+	    			else
+	    			{
+	    				System.out.println("The name '" + bookName + "' does not exist.");
+	    				System.out.println("Please enter your address: ");
+	    				String address = br.readLine();
+	    				int newGuestNum = GetMaxGetNum() + 1;
+	    				tempQuery = Integer.toString(newGuestNum) + ", " + bookName + ", " + address;
+	    				insert("Guest", tempQuery);
+	    				
+	    				obj.query("SELECT guestNo FROM Guest WHERE guestName = " + bookName);
+	    			}
+	    			
+	    			System.out.println("Please enter your guest number: ");
+    				guestNo = br.readLine();
+    				while (true)
+	    			{
+    					if (!guestNo.matches("[0-9]+"))
+    					{
+    						System.out.println("Invalid input. Please enter a valid guest number: ");
+    						guestNo = br.readLine();
+    					}	    				
+    					else if (CheckGuestNoExists(guestNo) == 0)
+	    				{
+    						System.out.println("Guest number does not exist. Please enter a valid guest number: ");
+    						guestNo = br.readLine();
+	    				}
+    					else
+    					{
+    						break;
+    					}	
+	    			}
+    				
+    				
+    				
+    				System.out.println("Please enter the hotel name: ");
+    				String hotelName = br.readLine();
+    				int hotelNum = GetHotelIDFromName(hotelName);
+    				while (hotelNum == 0)
+    				{
+    					System.out.println("The hotel name that you have entered does not exist. \nPlease re-enter the hotel name: ");
+    					hotelName = br.readLine();
+    					hotelNum = GetHotelIDFromName(hotelName);
+    				}
+    				
+    				System.out.println("Please enter the room number: ");
+    				String roomNo = br.readLine();
+    				while (!roomNo.matches("[0-9]+"))
+	    			{
+	    				System.out.println("Invalid input. Please enter a valid room number: ");
+	    				roomNo = br.readLine();
+	    			}
+    				
+    				System.out.println("Please enter values for the check in date:");
+	    			System.out.println("Month (mm):");
+	    			month = br.readLine();
+	    			while (!month.matches("[0-9]+") || month.length() != 2)
+	    			{
+	    				System.out.println("Invalid input. Please re-enter the month (mm): ");
+	    				month = br.readLine();
+	    			}
+	    			
+	    			System.out.println("Day (dd):");
+	    			day = br.readLine();
+	    			while (!day.matches("[0-9]+") || month.length() != 2)
+	    			{
+	    				System.out.println("Invalid input. Please re-enter the day (dd): ");
+	    				day = br.readLine();
+	    			}
+	    			
+	    			System.out.println("Year (yyyy):");
+	    			year = br.readLine();
+	    			while (!year.matches("[0-9]+") || month.length() != 4)
+	    			{
+	    				System.out.println("Invalid input. Please re-enter the year (yyyy): ");
+	    				year = br.readLine();
+	    			}
+	    			
+	    			checkInDate = year + "-" + month + "-" + day;
+    				
+    				System.out.println("Please enter the length of stay: ");
+    				String lengthOfStay = br.readLine();
+    				while (!lengthOfStay.matches("[0-9]+"))
+	    			{
+	    				System.out.println("Invalid input. Please enter a valid value for length of stay: ");
+	    				lengthOfStay = br.readLine();
+	    			}
+    				
+    				int newBookingNum = GetMaxBookingNo() + 1;
+    				
+    				tempQuery = Integer.toString(newBookingNum) + ", " + roomNo + ", " + Integer.toString(hotelNum) + ", " + guestNo + ", " + checkInDate + ", DATE_ADD(" + checkInDate + ", INTERVAL " + lengthOfStay + " DAY)";
+    				insert("Booking", tempQuery);
+    				
+    				System.out.println("You have successfully booked a room. Your booking number is " + newBookingNum);
+	    			break;
+	    		case 3: //find a booking
+	    			System.out.println("Please enter your name: ");
+	    			String findName = br.readLine();
+	    			int findBookingName = CheckNameExists(findName);
+	    			boolean isFindFound;
+	    			if (findBookingName >= 1)
+	    			{
+	    				isFindFound = true;
+	    			}
+	    			else
+	    			{
+	    				isFindFound = false;
+	    			}
+	    			
+	    			if (isFindFound)
+	    			{
+	    				obj.query("SELECT guestNo, guestAddress FROM Guest WHERE guestName = " + findName);
+	    				System.out.println("Please enter your guest number: ");
+	    				guestNo = br.readLine();
+	    				while (true)
+		    			{
+	    					if (!guestNo.matches("[0-9]+"))
+	    					{
+	    						System.out.println("Invalid input. Please enter a valid guest number: ");
+	    						guestNo = br.readLine();
+	    					}	    				
+	    					else if (CheckGuestNoExists(guestNo) == 0)
+		    				{
+	    						System.out.println("Guest number does not exist. Please enter a valid guest number: ");
+	    						guestNo = br.readLine();
+		    				}
+	    					else
+	    					{
+	    						break;
+	    					}	
+		    			}
+	    				
+	    				obj.query("Select b.bookingNo, h.hotelName, b.dateFrom, r.type FROM Booking b, Hotel h, Room r WHERE b.guestNo = " + guestNo + " AND h.hotelID = b.hotelNo AND r.roomNo = b.roomNo AND b.hotelNo = r.hotelNo");
+	    			}
+	    			else
+	    			{
+	    				System.out.println("The name '" + findName + "' does not exist.");
+	    			}
+	    			
+	    			break;
+	    		case 4: //cancel a booking
+	    			System.out.println("Please enter the booking number for the booking that you would like to cancel: ");
+	    			String bookingNo = br.readLine();
+	    			while (!bookingNo.matches("[0-9]+")) 
+	    			{
+	    				System.out.println("Invalid input. Please enter a valid booking number: ");
+	    				bookingNo = br.readLine();
 	    			}
 
-	    			boolean validWage = false;	
-	    			String wage = new String();   			
-	    			System.out.print("Wage: ");
-	    			while (!validWage)
-	    			{              
-	    				wage = br.readLine();
-            			if (wage.matches("^[0-9]*\\.?[0-9]*$") && wage.length() <= 12)
-            			{
-            				if (wage.length() < 12)
-            				{
-            					for ( ; wage.length() <12 ; )
-            					{
-            						wage += " ";
-            					}
-            				}
-            				validWage = true;
-            			}
-            			else
-            			{
-            				System.out.println("Invalid value for wage. Please enter a valid value: ");
-            			}
-	    			}
+	    			String queryString = "DELETE FROM BOOKING WHERE bookingNo = " + bookingNo;
+	    			statement.executeUpdate(queryString);
 	    			
-	    			boolean validIndustry = false;
-	    			String industry = new String();
-	    			System.out.print("Industry: ");
-	    			while (!validIndustry)
+	    			System.out.println("Booking number " + bookingNo + " has been deleted.");
+	    			break;
+	    		case 5: //list all guests
+	    			obj.query("SELECT hotelName, hotelID from Hotel");	    			
+	    			
+	    			System.out.println("Please enter a hotel ID: ");
+	    			String hotelID = br.readLine();
+	    			while (!hotelID.matches("[0-9]+")) 
 	    			{
-	    				industry = br.readLine();
-	    				if (industry.matches("^[a-zA-Z0-9_]*$") && industry.length() <= 27)
-            			{
-            				if (industry.length() < 27)
-            				{
-            					for ( ; industry.length() <27 ; )
-            					{
-            						industry += " ";
-            					}
-            				}
-            				validIndustry = true;
-            			}
-            			else
-            			{
-            				System.out.print("Invalid value for industry. Please enter a valid value: ");
-            			}
+	    				System.out.println("Invalid input. Please enter a valid hotel ID: ");
+	    				hotelID = br.readLine();
 	    			}
 	    			
-	    			AddRecord(inSorted, id, experience, married, wage, industry);
+	    			System.out.println("Please enter values for the date:");
+	    			System.out.println("Month (mm):");
+	    			month = br.readLine();
+	    			while (!month.matches("[0-9]+") || month.length() != 2)
+	    			{
+	    				System.out.println("Invalid input. Please re-enter the month (mm): ");
+	    				month = br.readLine();
+	    			}
+	    			
+	    			System.out.println("Day (dd):");
+	    			day = br.readLine();
+	    			while (!day.matches("[0-9]+") || month.length() != 2)
+	    			{
+	    				System.out.println("Invalid input. Please re-enter the day (dd): ");
+	    				day = br.readLine();
+	    			}
+	    			
+	    			System.out.println("Year (yyyy):");
+	    			year = br.readLine();
+	    			while (!year.matches("[0-9]+") || month.length() != 4)
+	    			{
+	    				System.out.println("Invalid input. Please re-enter the year (yyyy): ");
+	    				year = br.readLine();
+	    			}
+	    			
+	    			checkInDate = year + "-" + month + "-" + day;
+	    			
+	    			tempQuery = "SELECT g.guestName FROM Booking b, Guest g WHERE b.hotelNo = " + hotelID + " AND (date(b.dateFrom) <= " + checkInDate + " AND date(b.dateTo) >= " + checkInDate + ") AND g.guestNo = b.guestNo";
+	    			obj.query(tempQuery);
 	    			break;
-	    		case 8:
-	    			System.out.print("Please enter the ID of the record you would like to delete: ");
-	    			DeleteRecord(br.readLine());
+	    		case 6: //add a hotel
+	    			System.out.println("Please enter new hotel name: ");
+	    			String addHotelName = br.readLine();
+	    			System.out.println("Please enter the city of the new hotel: ");
+	    			String city = br.readLine();
+	    			
+	    			int newHotelID = GetMaxHotelID() + 1;
+	    			tempQuery = newHotelID + ", " + addHotelName + ", " + city;
+	    			insert("Hotel", tempQuery);
+	    			
+	    			System.out.println(addHotelName + " has been added. The hotel ID for " + addHotelName + " is " + newHotelID);
+	    			
+	    			while (true)
+	    			{
+	    				System.out.println("Would you like to add room information for the new hotel? (y/n): ");
+		    			String response = br.readLine();
+		    			if (response.equals("y"))
+		    			{
+		    				System.out.println("Please enter new room number: ");
+		    				String addRoomNo = br.readLine();
+		    				while (!addRoomNo.matches("[0-9]+"))
+			    			{
+			    				System.out.println("Invalid input. Please re-enter the year (yyyy): ");
+			    				addRoomNo = br.readLine();
+			    			}
+		    				System.out.println("Please enter new room type (db, sg, tp): ");
+		    				String type = br.readLine();
+		    				while (type != "db" || type != "sg" || type != "tp")
+		    				{
+		    					System.out.println("Invalid input. Please re-enter the new room type (db, sg, tp): ");
+		    				}
+		    				System.out.println("Please enter new room price between 50 and 500: ");
+		    				String priceString = br.readLine();
+		    				double price = 0;
+		    				while (true)
+    						{
+		    					if (!priceString.matches("[0-9]+([.][0-9]{1,2})?"))
+		    					{
+		    						System.out.println("Invalid input. Please re-enter a new room price between 50 and 500: ");
+		    						priceString = br.readLine();
+		    					}
+		    					else 
+		    					{
+		    						price = Double.parseDouble(br.readLine());
+		    						if (price < 50 || price > 500)
+		    						{
+		    							System.out.println("Invalid input. Please re-enter a new room price between 50 and 500: ");
+		    							priceString = br.readLine();
+		    						}
+		    						else
+		    						{
+		    							break;
+		    						}
+		    					}
+		    					
+    						}
+		    				
+		    				tempQuery = addRoomNo + ", " + newHotelID + ", " + type + ", " + price;
+		    				insert("Room", tempQuery);
+		    			}
+		    			else if (!response.equals("y") || !response.equals("n"))
+		    			{
+		    				System.out.println("Invalid input.");
+		    			}
+		    			else
+		    			{
+		    				break;
+		    			}
+	    			}	    			
 	    			break;
-	    		default:
-	    			System.out.println("Invalid input. Please try another input.");
+    			default:
+    				System.out.println("Invalid input. Please try another input.");
 	    			break;
     		}
     		PrintMenu();
     	}
-    }    
+    	obj.disConnect();
+	}
 }
