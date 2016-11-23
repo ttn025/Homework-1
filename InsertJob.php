@@ -6,7 +6,7 @@
 <form action="InsertJob.php" method="post">
     Company Name: <input type="text" name="name"><br>
     Job Title: <input type="text" name="title"><br>
-	Salary: <input type="text" name="salary"><br>
+	Salary: <input type="number" step = "0.01" name="salary"><br>
     <input name="submit" type="submit" ><br><br>
 	<a href="http://csce.uark.edu/~ttn025/Homework5/HomePage.html">return to home page</a>
 </form>
