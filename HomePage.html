@@ -1,18 +1,44 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+<head>
+<title>Assignment 5 - Home</title>
+<meta charset="utf-8">
+<link href="stylin.css" rel="stylesheet">
+</head>
 <body>
-
-<h1> Homework 5: Mika Moore and Thomas Nguyen </h1>
-
-<h2>Add</h2>
-<a href="http://csce.uark.edu/~ttn025/Homework5/InsertStudent.php">Student</a><br>
-<a href="http://csce.uark.edu/~ttn025/Homework5/InsertJob.php">Job</a><br>
-<a href="http://csce.uark.edu/~ttn025/Homework5/InsertApplication.php">Application</a><br>
-
-<h2>View Tables</h2>
-<a href="http://csce.uark.edu/~ttn025/Homework5/ViewStudents.php">Students</a><br>
-<a href="http://csce.uark.edu/~ttn025/Homework5/ViewJobs.php">Jobs</a><br>
-<a href="http://csce.uark.edu/~ttn025/Homework5/ViewApplications.php">Applications</a><br>
-
+<div id="wrapper">
+  <header>
+      <h1>Assignment 5</h1>
+  </header>
+  <nav>
+  <ul>
+  	<li><a href="http://csce.uark.edu/~mam033/HomePage.html">Home</a></li>
+  	<div class="dropdown">
+  		<button class="dropbtn">Add</button>
+  		<div class="dropdown-content">
+    		<a href="http://csce.uark.edu/~mam033/InsertStudent.php">Student</a>
+    		<a href="http://csce.uark.edu/~mam033/InsertJob.php">Job</a>
+    		<a href="http://csce.uark.edu/~mam033/InsertApplication.php">Application</a>
+  		</div>
+	</div>
+	<div class="dropdown">
+  		<button class="dropbtn">View</button>
+  		<div class="dropdown-content">
+  		 	<a href="http://csce.uark.edu/~mam033/ViewStudents.php">Student</a>
+    		<a href="http://csce.uark.edu/~mam033/ViewJobs.php">Job</a>
+    		<a href="http://csce.uark.edu/~mam033/ViewApplications.php">Application</a>
+  	</div>
+</div>
+  </ul>
+  </nav>
+  <div id="content" align="center">
+  <p>Please use the 'Add' options above if you wish to add a student, job, or application to our database. <br>Likewise use the 'View' options if you wish to view a student, job, or application already existing in our database.</p><br><br>
+  <p>Mika Moore: 010553256<br>Thomas Nguyen: 010586785</p>
+  </div>
+  <footer>
+  Copyright &copy; 2016 <a href= "mailto:mam033@uark.edu">Mika Moore</a> and <a href= "mailto:ttn025@uark.edu">Thomas Nguyen</a>
+  <p> Page Last Updated <script type="text/javascript">document.write(document.lastModified);</script></p>
+  </footer>
+</div>
 </body>
 </html>

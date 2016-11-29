@@ -46,6 +46,18 @@ public class jdbc_db {
         }
         return builder.toString();
     }
+
+    public String formattedQuery(String q) {
+        StringBuilder builder = new StringBuilder();
+        try {
+            ResultSet resultSet = statement.executeQuery(q);
+            builder.append(print(resultSet));
+        }
+        catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return builder.toString();
+    }
 	
 	public String viewQuery(String q) {
         StringBuilder builder = new StringBuilder();
@@ -66,7 +78,8 @@ public class jdbc_db {
         ResultSetMetaData metaData = resultSet.getMetaData();
         int numColumn = metaData.getColumnCount();
 
-        builder.append(printHeader(metaData, numColumn));
+
+        builder.append("<b><u>" + printHeader(metaData, numColumn) + "</u></b>");
         builder.append(printRecords(resultSet, numColumn));
 
         return builder.toString();
