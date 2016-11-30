@@ -13,11 +13,11 @@ public class InsertStudent {
 
         // For debugging purposes:  Show the database before the insert
         StringBuilder builder = new StringBuilder();
-        builder.append("<br><div align=\"center\"> Job successfully added!</div><br>");
+        builder.append("<br><div align=\"center\"> Student successfully added!</div><br>");
         
         //DEBUG
-        String query1 = "SELECT * from Students";
-        builder.append("<br> Table STUDENTS before:" + myDB.query(query1));       
+//        String query1 = "SELECT * from Students";
+//       builder.append("<br> Table STUDENTS before:" + myDB.query(query1));       
 
         // Parse input string to get guest Name and Address
         //String guestNo = "15";
@@ -41,8 +41,8 @@ public class InsertStudent {
         String input = "0" + ",'" + name + "','" + major + "'";               
         myDB.insert("Students", input);    // insert new student
 
- //       For debugging purposes:  Show the database after the insert
-        builder.append("<br><br><br> Table STUDENTS after:" + myDB.query(query1));
+//       For debugging purposes:  Show the database after the insert
+//        builder.append("<br><br><br> Table STUDENTS after:" + myDB.query(query1));
         System.out.println(builder.toString());     
 
         myDB.disConnect();

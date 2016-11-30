@@ -17,8 +17,8 @@ public class InsertJob {
 
 
         //DUBG
-        String query1 = "SELECT * from Jobs";
-        builder.append("<br> Table JOBS before:" + myDB.query(query1));       
+//        String query1 = "SELECT * from Jobs";
+ //       builder.append("<br> Table JOBS before:" + myDB.query(query1));       
 
         // Parse input string to get guest Name and Address
         String name = "";
@@ -49,7 +49,7 @@ public class InsertJob {
         myDB.insert("Jobs", input);    // insert new student
 
         // For debugging purposes:  Show the database after the insert
-        builder.append("<br><br><br> Table JOBS after:" + myDB.query(query1));
+//        builder.append("<br><br><br> Table JOBS after:" + myDB.query(query1));
 //        builder.append("</div>");
         System.out.println(builder.toString());     
 
